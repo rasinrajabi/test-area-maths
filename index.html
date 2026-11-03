@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Площадь прямоугольника — тест</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============ БАЗА ============ */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;
+  background:
+    radial-gradient(1200px 800px at 15% -10%, #3b2a7a 0%, transparent 60%),
+    radial-gradient(1000px 700px at 105% 105%, #0f3a5e 0%, transparent 55%),
+    #0b0918;
+  color:#eef0ff;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+button{font-family:inherit; cursor:pointer}
+.screen{display:none}
+.screen.active{display:block}
+.hidden{display:none !important}
+
+/* ============ ОБЩИЕ КОМПОНЕНТЫ ============ */
+.btn{
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.07);
+  color:#e8ebff;
+  padding:10px 20px;
+  border-radius:12px;
+  font-size:15px;
+  font-weight:700;
+  transition:.18s;
+}
+.btn:hover{background:rgba(255,255,255,.16); transform:translateY(-1px)}
+.btn.primary{
+  background:linear-gradient(135deg,#7c5cff,#22d3ee);
+  border:none;
+  box-shadow:0 8px 24px rgba(124,92,255,.4);
+}
+.btn.primary:hover{box-shadow:0 10px 30px rgba(124,92,255,.6)}
+.btn:disabled{opacity:.4; cursor:not-allowed; transform:none}
+
+/* ============ ЭКРАН НАСТРОЙКИ ============ */
+#setup{
+  max-width:700px; margin:0 auto; padding:40px 20px 60px;
+  flex-direction:column; align-items:center; justify-content:center;
+  min-height:100vh; text-align:center;
+}
+#setup.active{display:flex}
+#setup h1{
+  font-size:clamp(28px,4vw,44px);
+  font-weight:900;
+  margin:0 0 8px;
+  background:linear-gradient(90deg,#a78bfa,#22d3ee,#4ade80);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+#setup .subtitle{
+  color:#a8b0d8; font-size:16px; margin:0 0 30px;
+}
+.setup-card{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;
+  padding:28px 30px;
+  width:100%;
+  max-width:420px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  text-align:left;
+}
+.setup-card label{
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:15px; font-weight:700; color:#c3cbf5;
+}
+.setup-card select{
+  background:rgba(0,0,0,.25);
+  border:1px solid rgba(124,92,255,.5);
+  border-radius:9px;
+  color:#fff;
+  font-family:inherit;
+  font-weight:800;
+  font-size:15px;
+  padding:6px 12px;
+  outline:none;
+  cursor:pointer;
+}
+.setup-card select:focus{border-color:#a78bfa; box-shadow:0 0 0 3px rgba(124,92,255,.2)}
+.setup-card .btn.primary{
+  margin-top:6px;
+  font-size:16px;
+  padding:14px;
+}
+
+/* ============ ИГРОВОЙ ЭКРАН ============ */
+#game{
+  flex-direction:column;
+  min-height:100vh;
+  padding:16px;
+}
+#game.active{display:flex}
+.game-header{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:0 8px 10px;
+  font-weight:800; font-size:16px; color:#9aa3cc;
+}
+.game-header .timer{
+  display:flex; align-items:center; gap:6px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  padding:6px 14px; border-radius:99px;
+}
+.game-header .timer span{color:#8ef0c1; font-size:18px;}
+#progress{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  padding:6px 16px; border-radius:99px;
+}
+
+.stage{
+  flex:1;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  position:relative;
+  overflow:hidden;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:28px;
+  padding:24px;
+  min-height:400px;
+}
+#fxLayer{
+  position:absolute; inset:0;
+  pointer-events:none; overflow:hidden; z-index:1;
+}
+.task-container{
+  position:relative; z-index:2;
+  display:flex; flex-direction:column; align-items:center;
+  width:100%; max-width:700px;
+}
+.rect-wrap{
+  width:100%;
+  display:flex; justify-content:center; align-items:center;
+  margin-bottom:16px;
+}
+.rect-wrap svg{
+  max-width:100%;
+  height:auto;
+  user-select:none;
+}
+.answer-line{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center;
+}
+.answer-label{
+  font-size:clamp(20px,3vw,28px);
+  font-weight:800; color:#6b74a8;
+}
+.answer-field{
+  display:inline-flex; align-items:center;
+  background:rgba(255,255,255,.08);
+  border:2.5px solid rgba(124,92,255,.65);
+  border-radius:16px;
+  padding:2px 14px 2px 8px;
+  transition:.2s;
+}
+.answer-field:focus-within{
+  border-color:#a78bfa;
+  background:rgba(255,255,255,.13);
+  box-shadow:0 0 0 5px rgba(124,92,255,.22);
+}
+.answer-field input{
+  width:clamp(70px,12vw,120px);
+  background:transparent; border:none; outline:none;
+  font-family:inherit; font-weight:900;
+  font-size:clamp(28px,4vw,44px);
+  text-align:center; color:#fff;
+  padding:0;
+}
+.answer-field input::placeholder{color:rgba(255,255,255,.25)}
+.answer-field .unit{
+  font-size:clamp(18px,2.5vw,26px);
+  font-weight:800; color:#8ef0c1;
+  margin-left:4px; user-select:none; white-space:nowrap;
+}
+.submit-btn{
+  font-size:22px; font-weight:900;
+  padding:10px 18px; border-radius:14px;
+  background:linear-gradient(135deg,#7c5cff,#22d3ee);
+  border:none; color:#fff;
+  box-shadow:0 6px 18px rgba(124,92,255,.4);
+  transition:.2s;
+}
+.submit-btn:hover{box-shadow:0 8px 26px rgba(124,92,255,.6); transform:scale(1.05)}
+.submit-btn:disabled{opacity:.4; transform:none; box-shadow:none; cursor:not-allowed}
+
+.feedback{
+  margin-top:18px;
+  font-size:18px; font-weight:800;
+  min-height:28px;
+  text-align:center;
+  transition:.2s;
+}
+.feedback.correct{color:#4ade80; text-shadow:0 0 20px rgba(74,222,128,.5)}
+.feedback.wrong{color:#f87171; text-shadow:0 0 20px rgba(248,113,113,.5)}
+
+/* ============ ПОП-АНИМАЦИИ ============ */
+.pop-message{
+  position:absolute; left:50%; top:20%;
+  transform:translateX(-50%);
+  font-size:clamp(40px,7vw,72px);
+  font-weight:900;
+  z-index:50; pointer-events:none;
+  background:linear-gradient(90deg,#a78bfa,#22d3ee,#4ade80);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter:drop-shadow(0 0 30px rgba(167,139,250,.6));
+  white-space:nowrap;
+}
+.pop-anim-1{animation:popBounce .8s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes popBounce{
+  0%{opacity:0; transform:translateX(-50%) scale(.3) translateY(20px)}
+  40%{opacity:1; transform:translateX(-50%) scale(1.2) translateY(-10px)}
+  70%{transform:translateX(-50%) scale(.95) translateY(0)}
+  100%{opacity:0; transform:translateX(-50%) scale(1) translateY(-30px)}
+}
+.pop-anim-2{animation:popRotate .8s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes popRotate{
+  0%{opacity:0; transform:translateX(-50%) rotate(-30deg) scale(.2)}
+  30%{opacity:1; transform:translateX(-50%) rotate(10deg) scale(1.3)}
+  60%{transform:translateX(-50%) rotate(-5deg) scale(1)}
+  100%{opacity:0; transform:translateX(-50%) rotate(0deg) scale(1) translateY(-40px)}
+}
+.pop-anim-3{animation:popFlip .8s ease-out forwards}
+@keyframes popFlip{
+  0%{opacity:0; transform:translateX(-50%) rotateY(90deg) scale(.5)}
+  40%{opacity:1; transform:translateX(-50%) rotateY(0deg) scale(1.2)}
+  70%{transform:translateX(-50%) rotateY(0deg) scale(1)}
+  100%{opacity:0; transform:translateX(-50%) rotateY(0deg) scale(.9) translateY(-30px)}
+}
+.pop-anim-4{animation:popSlide .8s ease-out forwards}
+@keyframes popSlide{
+  0%{opacity:0; transform:translateX(-50%) translateY(40px) scale(.5)}
+  30%{opacity:1; transform:translateX(-50%) translateY(-10px) scale(1.15)}
+  60%{transform:translateX(-50%) translateY(0) scale(1)}
+  100%{opacity:0; transform:translateX(-50%) translateY(-50px) scale(1)}
+}
+
+/* ============ ЧАСТИЦЫ ============ */
+.confetti{
+  position:absolute; top:-10px;
+  width:10px; height:16px; border-radius:2px;
+  animation:confettiFall linear forwards;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(0) rotate(0); opacity:1}
+  100%{transform:translateY(600px) rotate(720deg); opacity:0}
+}
+.sparkle{
+  position:absolute;
+  width:8px; height:8px; background:#fff; border-radius:50%;
+  box-shadow:0 0 12px #fff, 0 0 24px #fbbf24;
+  animation:sparkleTwinkle 1.2s ease-out forwards;
+}
+@keyframes sparkleTwinkle{
+  0%{transform:scale(0); opacity:0}
+  50%{transform:scale(1.6); opacity:1}
+  100%{transform:scale(0); opacity:0}
+}
+.firework-particle{
+  position:absolute;
+  width:6px; height:6px; border-radius:50%;
+  animation:fireworkBurst 1s ease-out forwards;
+}
+@keyframes fireworkBurst{
+  0%{transform:translate(-50%,-50%) scale(1.5); opacity:1}
+  100%{transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.2); opacity:0}
+}
+
+/* ============ РЕЗУЛЬТАТЫ ============ */
+#results{
+  background:#f6f7fc; color:#15162b;
+  min-height:100vh; padding:34px 22px 60px;
+}
+.res-wrap{max-width:900px; margin:0 auto}
+.res-title{
+  font-size:clamp(26px,3.6vw,40px); font-weight:900; margin:0 0 6px; text-align:center;
+  background:linear-gradient(90deg,#7c5cff,#22d3ee);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.res-sub{text-align:center; color:#6b7191; margin:0 0 24px; font-weight:600}
+
+.stats-row{
+  display:flex; justify-content:center; gap:20px; flex-wrap:wrap;
+  margin-bottom:24px;
+}
+.stat-box{
+  background:#fff; border:1.5px solid #e5e8f5;
+  border-radius:18px; padding:16px 28px;
+  display:flex; flex-direction:column; align-items:center;
+  min-width:140px;
+  box-shadow:0 4px 14px rgba(30,40,90,.06);
+}
+.stat-box .stat-label{font-size:13px; font-weight:800; color:#6b7191; text-transform:uppercase; letter-spacing:1px}
+.stat-box .stat-value{font-size:26px; font-weight:900; color:#7c5cff; margin-top:4px}
+.stat-box .stat-value.green{color:#16a34a}
+.stat-box .stat-value.red{color:#dc2626}
+
+.mistakes-list{
+  background:#fff; border:1.5px solid #f1e5e5; border-left:4px solid #f87171;
+  border-radius:14px; padding:16px 20px; margin-bottom:24px;
+  box-shadow:0 2px 10px rgba(30,40,90,.06);
+}
+.mistakes-list h3{
+  margin:0 0 10px; font-size:16px; font-weight:900; color:#b91c1c;
+}
+.mistakes-list ul{
+  margin:0; padding-left:20px;
+  display:flex; flex-direction:column; gap:8px;
+}
+.mistakes-list li{
+  font-size:15px; font-weight:700; color:#15162b;
+  line-height:1.4;
+}
+.mistakes-list li .correct-answer{color:#16a34a; font-weight:900}
+.mistakes-list li .given-answer{color:#b91c1c; font-weight:700}
+.no-mistakes{
+  text-align:center; color:#15803d; font-weight:800; font-size:16px;
+  padding:16px; background:#ecfdf5; border:1.5px solid #bbf7d0; border-radius:12px;
+}
+
+.name-save{
+  display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  margin-bottom:28px;
+}
+.name-save input{
+  font-family:inherit; font-size:16px; font-weight:700;
+  padding:12px 18px; border-radius:12px;
+  border:2px solid #d8dcee; background:#fff; color:#15162b;
+  outline:none; min-width:240px;
+  transition:.2s;
+}
+.name-save input:focus{border-color:#a78bfa; box-shadow:0 0 0 4px rgba(124,92,255,.15)}
+.name-save .btn{
+  background:linear-gradient(135deg,#7c5cff,#22d3ee); color:#fff; border:none;
+  padding:12px 24px; border-radius:12px; font-weight:800; font-size:15px;
+  box-shadow:0 6px 18px rgba(124,92,255,.3);
+}
+.name-save .btn:hover{box-shadow:0 8px 26px rgba(124,92,255,.5)}
+
+.leaderboard{
+  background:#fff; border-radius:18px; padding:20px 24px;
+  box-shadow:0 10px 34px rgba(30,40,90,.09);
+  margin-bottom:28px;
+}
+.leaderboard h2{
+  font-size:20px; font-weight:900; margin:0 0 16px; color:#15162b;
+}
+.leaderboard table{
+  width:100%; border-collapse:collapse;
+}
+.leaderboard th{
+  text-align:left; padding:8px 12px;
+  font-size:12px; font-weight:800; color:#5a6090;
+  text-transform:uppercase; letter-spacing:1px;
+  border-bottom:2px solid #eef1ff;
+}
+.leaderboard td{
+  padding:10px 12px; border-bottom:1px solid #eef1f7;
+  font-weight:700; font-size:15px; color:#15162b;
+}
+.leaderboard tr:last-child td{border-bottom:none}
+.leaderboard tbody tr:hover{background:#f8f9ff}
+
+.actions{
+  display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  margin-top:10px;
+}
+.actions .btn{
+  background:#fff; color:#2b2e4a; border:1.5px solid #d8dcee;
+  box-shadow:0 4px 14px rgba(30,40,90,.07);
+  padding:12px 24px; font-size:15px;
+}
+.actions .btn:hover{background:#eef1ff; border-color:#a78bfa}
+.actions .btn.primary{
+  background:linear-gradient(135deg,#7c5cff,#22d3ee); color:#fff; border:none;
+  box-shadow:0 8px 24px rgba(124,92,255,.35);
+}
+
+@media (max-width:600px){
+  .stats-row{flex-direction:column; align-items:center}
+  .stat-box{width:100%; max-width:280px}
+  .name-save{flex-direction:column; align-items:center}
+  .name-save input{width:100%; max-width:300px}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= ЭКРАН НАСТРОЙКИ ================= -->
+<section id="setup" class="screen active">
+  <h1>Площадь прямоугольника</h1>
+  <p class="subtitle">Найди площадь или неизвестную сторону</p>
+  <div class="setup-card">
+    <label>
+      Количество вопросов:
+      <select id="numQuestions">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+      </select>
+    </label>
+    <button id="startBtn" class="btn primary">Начать тест ▶</button>
+  </div>
+</section>
+
+<!-- ================= ЭКРАН ИГРЫ ================= -->
+<section id="game" class="screen">
+  <div class="game-header">
+    <div class="timer">⏱ <span id="timerDisplay">0.0</span> с</div>
+    <div id="progress">Вопрос 1 из 10</div>
+  </div>
+  <div class="stage" id="stage">
+    <div id="fxLayer"></div>
+    <div class="task-container">
+      <div id="rectWrap" class="rect-wrap"></div>
+      <div class="answer-line">
+        <span class="answer-label">Ответ:</span>
+        <div class="answer-field">
+          <input id="answerInput" type="text" inputmode="numeric" autocomplete="off" placeholder="?">
+          <span id="unitLabel" class="unit">см²</span>
+        </div>
+        <button id="submitBtn" class="submit-btn">→</button>
+      </div>
+      <div id="feedback" class="feedback"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ЭКРАН РЕЗУЛЬТАТОВ ================= -->
+<section id="results" class="screen">
+  <div class="res-wrap">
+    <h1 class="res-title">🏆 Результаты</h1>
+    <p class="res-sub">Площадь прямоугольника</p>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="stat-label">Время</span>
+        <span class="stat-value" id="resTime">0 с</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Правильно</span>
+        <span class="stat-value green" id="resCorrect">0 из 0</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-label">Ошибки</span>
+        <span class="stat-value red" id="resErrors">0</span>
+      </div>
+    </div>
+
+    <div id="mistakesList" class="mistakes-list"></div>
+
+    <div class="name-save">
+      <input type="text" id="playerName" placeholder="Введите ваше имя" maxlength="30">
+      <button id="saveBtn" class="btn">Сохранить результат</button>
+    </div>
+
+    <div class="leaderboard">
+      <h2>Лучшие результаты</h2>
+      <table id="leaderboard">
+        <thead>
+          <tr><th>#</th><th>Имя</th><th>Правильно</th><th>Время</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button id="restartBtn" class="btn primary">Пройти ещё раз</button>
+      <button id="clearLeaderboardBtn" class="btn">Очистить таблицу</button>
+    </div>
+  </div>
+</section>
+
+<script>
+/* =====================================================
+   УТИЛИТЫ
+   ===================================================== */
+const $ = id => document.getElementById(id);
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/* =====================================================
+   СОСТОЯНИЕ
+   ===================================================== */
+let totalQuestions = 10;
+let questions = [];
+let currentIndex = 0;
+let correctCount = 0;
+let mistakes = [];
+let startTime = 0;
+let timerInterval = null;
+let elapsedMs = 0;
+let currentTask = null;
+let answered = false;
+let lastTaskKey = null;
+let savedAlready = false;
+
+/* DOM */
+const setupScreen = $('setup');
+const gameScreen = $('game');
+const resultsScreen = $('results');
+const stage = $('stage');
+const fxLayer = $('fxLayer');
+const rectWrap = $('rectWrap');
+const answerInput = $('answerInput');
+const unitLabel = $('unitLabel');
+const submitBtn = $('submitBtn');
+const feedback = $('feedback');
+const timerDisplay = $('timerDisplay');
+const progress = $('progress');
+
+/* =====================================================
+   ГЕНЕРАЦИЯ ЗАДАНИЙ
+   ===================================================== */
+function generateQuestions(n) {
+  const qs = [];
+  const types = ['area', 'side'];
+  for (let i = 0; i < n; i++) {
+    let task, key;
+    let guard = 0;
+    do {
+      const type = types[Math.floor(Math.random() * types.length)];
+      const a = randInt(2, 9);
+      const b = randInt(2, 9);
+      const area = a * b;
+      if (type === 'area') {
+        task = { type: 'area', a, b, answer: area, unit: 'см²' };
+        key = `area_${a}_${b}`;
+      } else {
+        const givenHorizontal = Math.random() < 0.5;
+        const given = givenHorizontal ? a : b;
+        const unknown = givenHorizontal ? b : a;
+        task = {
+          type: 'side',
+          given,
+          unknown,
+          area,
+          orientation: givenHorizontal ? 'h' : 'v',
+          answer: unknown,
+          unit: 'см'
+        };
+        key = `side_${given}_${unknown}_${givenHorizontal}`;
+      }
+      guard++;
+    } while (guard < 50 && key === lastTaskKey && n > 1);
+    lastTaskKey = key;
+    qs.push(task);
+  }
+  return qs;
+}
+
+/* =====================================================
+   ПОСТРОЕНИЕ SVG
+   ===================================================== */
+function buildTaskSVG(task) {
+  let HORIZ, VERT, areaText, horizontalLabel, verticalLabel;
+  let horizontalUnknown = false, verticalUnknown = false;
+  let secondLabel = null;
+  let blockSide = 'right';
+  let vertLabelRight = false;
+
+  if (task.type === 'area') {
+    HORIZ = task.a;
+    VERT = task.b;
+    areaText = 'S = ?';
+    horizontalLabel = task.a + ' см';
+    verticalLabel = task.b + ' см';
+    blockSide = 'right';
+    vertLabelRight = false;
+  } else if (task.orientation === 'h') {
+    HORIZ = task.given;
+    VERT = task.unknown;
+    areaText = 'S = ' + task.area + ' см²';
+    horizontalLabel = task.given + ' см';
+    verticalLabel = '?';
+    verticalUnknown = true;
+    secondLabel = 'b = ?';
+    blockSide = 'left';
+    vertLabelRight = true;
+  } else {
+    HORIZ = task.unknown;
+    VERT = task.given;
+    areaText = 'S = ' + task.area + ' см²';
+    horizontalLabel = '?';
+    verticalLabel = task.given + ' см';
+    horizontalUnknown = true;
+    secondLabel = 'a = ?';
+    blockSide = 'right';
+    vertLabelRight = false;
+  }
+
+  const MAX_SIDE = 200;
+  const PX_PER_CM = 26;
+  const scale = Math.min(MAX_SIDE / Math.max(HORIZ, VERT), PX_PER_CM);
+
+  const w = HORIZ * scale;
+  const h = VERT * scale;
+
+  const BLOCK_W = 175;
+  const VERT_W = 75;
+
+  let padL = 70;
+  let padR = 30;
+  if (blockSide === 'left') padL = Math.max(padL, BLOCK_W);
+  else padR = Math.max(padR, BLOCK_W);
+  if (vertLabelRight) padR = Math.max(padR, VERT_W);
+  else padL = Math.max(padL, VERT_W);
+
+  const padT = 50;
+  const padB = 30;
+  const W = w + padL + padR;
+  const H = h + padT + padB;
+  const rx = padL, ry = padT;
+
+  let grid = '';
+  if (HORIZ <= 12 && VERT <= 12) {
+    for (let i = 1; i < HORIZ; i++) {
+      const x = rx + i * scale;
+      grid += `<line x1="${x}" y1="${ry}" x2="${x}" y2="${ry + h}" stroke="rgba(167,139,250,.2)" stroke-width="1"/>`;
+    }
+    for (let j = 1; j < VERT; j++) {
+      const y = ry + j * scale;
+      grid += `<line x1="${rx}" y1="${y}" x2="${rx + w}" y2="${y}" stroke="rgba(167,139,250,.2)" stroke-width="1"/>`;
+    }
+  }
+
+  const hColor = horizontalUnknown ? '#fbbf24' : '#c4b5fd';
+  const vColor = verticalUnknown ? '#fbbf24' : '#67e8f9';
+
+  let vX, vAnchor;
+  if (vertLabelRight) {
+    vX = rx + w + 15;
+    vAnchor = 'start';
+  } else {
+    vX = rx - 15;
+    vAnchor = 'end';
+  }
+  const vY = ry + h / 2;
+
+  let bX, bAnchor;
+  if (blockSide === 'right') {
+    bX = rx + w + 25;
+    bAnchor = 'start';
+  } else {
+    bX = rx - 25;
+    bAnchor = 'end';
+  }
+
+  const sY = ry + h / 2;
+  let yArea, ySecond;
+  if (secondLabel) {
+    yArea = sY - 18;
+    ySecond = sY + 18;
+  } else {
+    yArea = sY;
+    ySecond = sY;
+  }
+
+  let secondText = '';
+  if (secondLabel) {
+    secondText = `<text x="${bX}" y="${ySecond}" text-anchor="${bAnchor}" dominant-baseline="middle"
+        font-family="Nunito, sans-serif" font-weight="800" font-size="22" fill="#fbbf24">${secondLabel}</text>`;
+  }
+
+  return `
+    <svg class="rect-svg" xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+      <defs>
+        <linearGradient id="rectFill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="rgba(124,92,255,.28)"/>
+          <stop offset="100%" stop-color="rgba(34,211,238,.18)"/>
+        </linearGradient>
+        <linearGradient id="rectStroke" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#a78bfa"/>
+          <stop offset="100%" stop-color="#22d3ee"/>
+        </linearGradient>
+      </defs>
+      <rect x="${rx}" y="${ry}" width="${w}" height="${h}" fill="url(#rectFill)" stroke="url(#rectStroke)" stroke-width="2.5" rx="2"/>
+      ${grid}
+      <text x="${rx + w/2}" y="${ry - 18}" text-anchor="middle"
+            font-family="Nunito, sans-serif" font-weight="800" font-size="22" fill="${hColor}">${horizontalLabel}</text>
+      <text x="${vX}" y="${vY}" text-anchor="${vAnchor}" dominant-baseline="middle"
+            font-family="Nunito, sans-serif" font-weight="800" font-size="22" fill="${vColor}">${verticalLabel}</text>
+      <text x="${bX}" y="${yArea}" text-anchor="${bAnchor}" dominant-baseline="middle"
+            font-family="Nunito, sans-serif" font-weight="900" font-size="24" fill="#e0dcff">${areaText}</text>
+      ${secondText}
+    </svg>
+  `;
+}
+
+/* =====================================================
+   ОПИСАНИЕ ЗАДАНИЯ
+   ===================================================== */
+function describeTask(task) {
+  if (task.type === 'area') {
+    return `Прямоугольник ${task.a} см × ${task.b} см (найти площадь)`;
+  } else {
+    return `Площадь ${task.area} см², сторона ${task.given} см (найти другую сторону)`;
+  }
+}
+
+/* =====================================================
+   ТАЙМЕР
+   ===================================================== */
+function updateTimerDisplay() {
+  const now = performance.now();
+  const elapsed = (now - startTime) / 1000;
+  timerDisplay.textContent = elapsed.toFixed(1);
+}
+
+/* =====================================================
+   ЗАГРУЗКА ВОПРОСА
+   ===================================================== */
+function loadQuestion() {
+  if (currentIndex >= questions.length) {
+    finishTest();
+    return;
+  }
+  answered = false;
+  savedAlready = false;
+  currentTask = questions[currentIndex];
+
+  progress.textContent = `Вопрос ${currentIndex + 1} из ${questions.length}`;
+  rectWrap.innerHTML = buildTaskSVG(currentTask);
+  unitLabel.textContent = currentTask.unit;
+
+  answerInput.value = '';
+  answerInput.readOnly = false;
+  answerInput.focus();
+  submitBtn.disabled = false;
+
+  feedback.className = 'feedback';
+  feedback.textContent = '';
+
+  const oldPop = document.querySelector('.pop-message');
+  if (oldPop) oldPop.remove();
+}
+
+/* =====================================================
+   ОТВЕТ
+   ===================================================== */
+function submitAnswer() {
+  if (answered) return;
+  const raw = answerInput.value.trim();
+  if (raw === '') return;
+  const val = parseInt(raw, 10);
+  if (isNaN(val)) return;
+
+  answered = true;
+  answerInput.readOnly = true;
+  submitBtn.disabled = true;
+
+  if (val === currentTask.answer) {
+    correctCount++;
+    playCorrectEffect();
+    feedback.className = 'feedback correct';
+    feedback.textContent = 'Правильно!';
+    setTimeout(() => {
+      currentIndex++;
+      loadQuestion();
+    }, 900);
+  } else {
+    mistakes.push({
+      task: describeTask(currentTask),
+      correct: currentTask.answer,
+      given: val,
+      unit: currentTask.unit
+    });
+    feedback.className = 'feedback wrong';
+    feedback.textContent = `Неправильно. Правильный ответ: ${currentTask.answer} ${currentTask.unit}`;
+    setTimeout(() => {
+      currentIndex++;
+      loadQuestion();
+    }, 2000);
+  }
+}
+
+/* =====================================================
+   АНИМАЦИИ ПРИ ПРАВИЛЬНОМ ОТВЕТЕ
+   ===================================================== */
+function playCorrectEffect() {
+  const pop = document.createElement('div');
+  pop.className = 'pop-message pop-anim-' + randInt(1, 4);
+  const phrases = ['Правильно!', 'Молодец!', 'Верно!', 'Отлично!', 'Супер!'];
+  pop.textContent = phrases[randInt(0, phrases.length - 1)];
+  stage.appendChild(pop);
+  setTimeout(() => pop.remove(), 1000);
+
+  const effect = randInt(0, 2);
+  if (effect === 0) spawnConfetti();
+  else if (effect === 1) spawnSparkles();
+  else spawnFireworks();
+}
+
+function spawnConfetti() {
+  const colors = ['#f472b6','#fbbf24','#4ade80','#22d3ee','#a78bfa','#f87171'];
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[randInt(0, colors.length - 1)];
+    c.style.animationDuration = (0.8 + Math.random() * 1) + 's';
+    c.style.animationDelay = (Math.random() * 0.3) + 's';
+    fxLayer.appendChild(c);
+    setTimeout(() => c.remove(), 2200);
+  }
+}
+
+function spawnSparkles() {
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.animationDelay = (Math.random() * 0.5) + 's';
+    fxLayer.appendChild(s);
+    setTimeout(() => s.remove(), 1800);
+  }
+}
+
+function spawnFireworks() {
+  const colors = ['#fbbf24','#f472b6','#22d3ee','#4ade80','#a78bfa','#fff'];
+  const centerX = 50, centerY = 40;
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'firework-particle';
+    const angle = (i / 30) * Math.PI * 2;
+    const dist = 50 + Math.random() * 100;
+    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    p.style.background = colors[i % colors.length];
+    p.style.left = centerX + '%';
+    p.style.top = centerY + '%';
+    fxLayer.appendChild(p);
+    setTimeout(() => p.remove(), 1300);
+  }
+}
+
+/* =====================================================
+   СТАРТ / ФИНИШ
+   ===================================================== */
+function startTest() {
+  totalQuestions = parseInt($('numQuestions').value, 10);
+  questions = generateQuestions(totalQuestions);
+  currentIndex = 0;
+  correctCount = 0;
+  mistakes = [];
+  savedAlready = false;
+  lastTaskKey = null;
+
+  startTime = performance.now();
+  elapsedMs = 0;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimerDisplay, 100);
+  timerDisplay.textContent = '0.0';
+
+  setupScreen.classList.remove('active');
+  resultsScreen.classList.remove('active');
+  gameScreen.classList.add('active');
+
+  window.scrollTo(0, 0);
+  loadQuestion();
+}
+
+function finishTest() {
+  clearInterval(timerInterval);
+  const now = performance.now();
+  elapsedMs = now - startTime;
+
+  gameScreen.classList.remove('active');
+  resultsScreen.classList.add('active');
+  window.scrollTo(0, 0);
+  renderResults();
+}
+
+/* =====================================================
+   РЕЗУЛЬТАТЫ
+   ===================================================== */
+function renderResults() {
+  const totalSec = (elapsedMs / 1000).toFixed(1);
+  $('resTime').textContent = totalSec + ' с';
+  $('resCorrect').textContent = correctCount + ' из ' + questions.length;
+  $('resErrors').textContent = mistakes.length;
+
+  const mistakesContainer = $('mistakesList');
+  if (mistakes.length === 0) {
+    mistakesContainer.innerHTML = '<p class="no-mistakes">🎉 Ошибок нет — отличная работа!</p>';
+  } else {
+    let html = '<h3>Ошибки:</h3><ul>';
+    mistakes.forEach(m => {
+      html += `<li>${escapeHtml(m.task)} — правильный ответ: <span class="correct-answer">${m.correct} ${m.unit}</span>, ваш ответ: <span class="given-answer">${m.given} ${m.unit}</span></li>`;
+    });
+    html += '</ul>';
+    mistakesContainer.innerHTML = html;
+  }
+
+  $('playerName').value = '';
+  $('saveBtn').disabled = false;
+  $('saveBtn').textContent = 'Сохранить результат';
+
+  loadLeaderboard();
+}
+
+/* =====================================================
+   СОХРАНЕНИЕ И ТАБЛИЦА ЛИДЕРОВ
+   ===================================================== */
+function saveResult() {
+  const name = $('playerName').value.trim();
+  if (!name) {
+    alert('Пожалуйста, введите имя');
+    return;
+  }
+  if (savedAlready) return;
+
+  const result = {
+    name,
+    time: parseFloat((elapsedMs / 1000).toFixed(1)),
+    correct: correctCount,
+    total: questions.length,
+    date: new Date().toISOString()
+  };
+
+  let saved = [];
+  try {
+    saved = JSON.parse(localStorage.getItem('rectTestResults') || '[]');
+  } catch (e) { saved = []; }
+  saved.push(result);
+  if (saved.length > 50) saved = saved.slice(-50);
+  localStorage.setItem('rectTestResults', JSON.stringify(saved));
+
+  savedAlready = true;
+  $('saveBtn').disabled = true;
+  $('saveBtn').textContent = 'Сохранено ✓';
+  $('playerName').value = '';
+
+  loadLeaderboard();
+}
+
+function loadLeaderboard() {
+  let saved = [];
+  try {
+    saved = JSON.parse(localStorage.getItem('rectTestResults') || '[]');
+  } catch (e) { saved = []; }
+
+  saved.sort((a, b) => {
+    if (b.correct !== a.correct) return b.correct - a.correct;
+    return a.time - b.time;
+  });
+
+  const tbody = document.querySelector('#leaderboard tbody');
+  if (saved.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#a2a8c0; font-style:italic;">Пока нет результатов</td></tr>';
+    return;
+  }
+  tbody.innerHTML = saved.slice(0, 10).map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${escapeHtml(r.name)}</td>
+      <td>${r.correct} / ${r.total}</td>
+      <td>${r.time} с</td>
+    </tr>
+  `).join('');
+}
+
+function clearLeaderboard() {
+  if (!confirm('Очистить таблицу результатов?')) return;
+  localStorage.removeItem('rectTestResults');
+  loadLeaderboard();
+}
+
+/* =====================================================
+   ОБРАБОТЧИКИ СОБЫТИЙ
+   ===================================================== */
+$('startBtn').addEventListener('click', startTest);
+
+answerInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitAnswer();
+  }
+});
+submitBtn.addEventListener('click', submitAnswer);
+
+answerInput.addEventListener('input', () => {
+  answerInput.value = answerInput.value.replace(/[^\d]/g, '').slice(0, 3);
+});
+
+$('saveBtn').addEventListener('click', saveResult);
+$('restartBtn').addEventListener('click', () => {
+  resultsScreen.classList.remove('active');
+  setupScreen.classList.add('active');
+  $('playerName').value = '';
+  savedAlready = false;
+  $('saveBtn').disabled = false;
+  $('saveBtn').textContent = 'Сохранить результат';
+  window.scrollTo(0, 0);
+});
+$('clearLeaderboardBtn').addEventListener('click', clearLeaderboard);
+
+/* =====================================================
+   ИНИЦИАЛИЗАЦИЯ
+   ===================================================== */
+setupScreen.classList.add('active');
+</script>
+</body>
+</html>
